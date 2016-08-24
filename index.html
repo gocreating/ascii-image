@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Image to Ascii</title>
+    <style>
+      #txt {
+        font-family: Consolas;
+        letter-spacing: 3px;
+        font-size: 12px;
+        line-height: 10px;
+      }
+    </style>
+    <script type="text/javascript">
+      function previewFiles() {
+
+        var preview = document.querySelector('#preview');
+        var txt = document.querySelector('#txt');
+        var files   = document.querySelector('input[type=file]').files;
+        var canvas = document.querySelector('#canvas');
+
+        function getAscii(w, h) {
+          var ctx = canvas.getContext('2d');
+          // var map = ['.', ';', 'c', 'n', 'm', 'B', 'N'];
+          var map = ['N', 'B', 'm', 'n', 'c', ';', '.', '.', ' ', ' '];
+
+          var lines = [];
+          var line = '';
+          var pixelData = ctx.getImageData(0, 0, w, h).data;
+
+          var len = pixelData.length;
+          for (var i = 0; i < len; i = i + 4) {
+            var r = pixelData[i], g = pixelData[i + 1], b = pixelData[i + 2];
+            var minColor = (r + g + b) / 3;
+            // var normalizedIndex = parseInt(minColor / 42); // normalizing factor = (256 / (map.length - 1))
+            var normalizedIndex = parseInt(minColor / 28); // normalizing factor = (256 / (map.length - 1))
+            line = line + map[normalizedIndex];
+            if (((i / 4) + 1) % w === 0) {
+              lines.push(line);
+              line = '';
+            }
+          }
+          return lines.join('\n');
+        }
+
+        function readAndPreview(file) {
+
+          // Make sure `file.name` matches our extensions criteria
+          if ( /\.(jpe?g|png|gif)$/i.test(file.name) ) {
+            var reader = new FileReader();
+
+            reader.addEventListener("load", function () {
+              // var image = new Image();
+              preview.title = file.name;
+              preview.src = this.result;
+              var factor = preview.height > 80? preview.height / 80: 1;
+              preview.height = preview.height / factor;
+
+              canvas.width = preview.width;
+              canvas.height = preview.height;
+              canvas.getContext('2d').drawImage(preview, 0, 0, canvas.width, canvas.height);
+
+              var asc = getAscii(preview.width, preview.height);
+              txt.innerHTML = asc;
+            }, false);
+
+            reader.readAsDataURL(file);
+          }
+
+        }
+
+        if (files) {
+          [].forEach.call(files, readAndPreview);
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <input id="browse" type="file" onchange="previewFiles()" multiple>
+    <img id="preview" />
+    <canvas id="canvas"></canvas>
+    <!-- <textarea cols="200" rows="100" id="txt"></textarea> -->
+    <pre id="txt"></pre>
+  </body>
+</html>
